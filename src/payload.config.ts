@@ -8,6 +8,7 @@ import { ActivityLog } from '@/collections/ActivityLog'
 import { Categories } from '@/collections/Categories'
 import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
+import { Products } from '@/collections/Products'
 import { Redirects } from '@/collections/Redirects'
 import { SeoEntries } from '@/collections/SeoEntries'
 import { Users } from '@/collections/Users'
@@ -54,7 +55,7 @@ export default buildConfig({
       beforeDashboard: ['@/components/admin/dashboard/ActivityPulse#ActivityPulse'],
     },
   },
-  collections: [Pages, Media, Categories, SeoEntries, Redirects, ActivityLog, Users],
+  collections: [Pages, Media, Categories, Products, SeoEntries, Redirects, ActivityLog, Users],
   editor: lexicalEditor(),
   i18n,
   secret: env.payloadSecret,

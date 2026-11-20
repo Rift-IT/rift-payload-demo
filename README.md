@@ -9,7 +9,7 @@ Demoen viser fire ting:
 3. Hvordan en udvikler tilføjer en ny tabel til databasen
 4. Hvordan en udvikler laver et API-endpoint, der henter og filtrerer rækker fra den tabel
 
-Punkt 1 og 2 kan du prøve med det samme i admin-panelet. Punkt 3 og 4 kommer i næste commit, se [git-historikken](#git-historikken).
+Punkt 1 og 2 foregår i admin-panelet. Punkt 3 og 4 er kode, og de ligger samlet i det seneste commit. Kør `git show HEAD` for at se hele ændringen.
 
 ## Kom i gang
 
@@ -24,16 +24,17 @@ pnpm dev
 
 Åbn derefter:
 
-| Hvad          | URL                               |
-| ------------- | --------------------------------- |
-| Hjemmesiden   | http://localhost:3000             |
-| Admin-panelet | http://localhost:3000/admin       |
-| REST API      | http://localhost:3000/api/pages   |
-| Sitemap       | http://localhost:3000/sitemap.xml |
+| Hvad          | URL                                                       |
+| ------------- | --------------------------------------------------------- |
+| Hjemmesiden   | http://localhost:3000                                     |
+| Admin-panelet | http://localhost:3000/admin                               |
+| REST API      | http://localhost:3000/api/pages                           |
+| Sitemap       | http://localhost:3000/sitemap.xml                         |
+| Produkt-API   | http://localhost:3000/api/products/search?category=coffee |
 
 **Login til admin:** `demo@therift.dev` / `demo1234`. Felterne er udfyldt på forhånd, så du skal bare klikke **Login**.
 
-Der er ingen `.env`-fil eller database at sætte op. Ved første start opretter projektet selv SQLite-filen `demo.db`, demo-brugeren og et par sider med indhold. Første sidevisning tager et par sekunder, fordi Next.js kompilerer.
+Der er ingen `.env`-fil eller database at sætte op. Ved første start opretter projektet selv SQLite-filen `demo.db`, demo-brugeren, et par sider og nogle produkter. Første sidevisning tager et par sekunder, fordi Next.js kompilerer.
 
 Vil du starte forfra med frisk demo-data, så stop serveren og kør `pnpm reset`.
 
@@ -60,16 +61,106 @@ Gå til **Marketing → SEO**. Hver side får automatisk en SEO-entry, første g
 
 Forsiden har allerede meta-data og et JSON-LD-eksempel. Se kildekoden på http://localhost:3000 for at se resultatet. Redirects kan også oprettes manuelt under **Marketing → Redirects**.
 
-## API
+## 3. En ny tabel
 
-Payload laver automatisk et REST API (og GraphQL på `/api/graphql`) for alle collections, med filtrering, sortering, paginering og adgangskontrol. Prøv f.eks.:
+En tabel i Payload er en **collection**: én TypeScript-fil, der beskriver felterne. Ud fra den laver Payload selv databasetabellen, admin-skærmene, validering, adgangskontrol og et REST- og GraphQL-API.
+
+Eksemplet er tabellen `products`. Det er tre trin:
+
+**1. Beskriv tabellen** i [`src/collections/Products/index.ts`](src/collections/Products/index.ts):
+
+```ts
+export const Products: CollectionConfig = {
+  slug: 'products', // tabelnavn og API-sti: /api/products
+  access: { read: () => true, create: isAdmin, update: isAdmin, delete: isAdmin },
+  fields: [
+    { name: 'name', type: 'text', required: true },
+    { name: 'category', type: 'select', options: [/* coffee, tea, equipment */], index: true },
+    { name: 'price', type: 'number', required: true, min: 0 },
+    { name: 'inStock', type: 'checkbox', defaultValue: true },
+    { name: 'description', type: 'textarea' },
+  ],
+}
+```
+
+**2. Registrer den** i [`src/payload.config.ts`](src/payload.config.ts):
+
+```ts
+collections: [Pages, Media, Categories, Products, ...],
+```
+
+**3. Generer TypeScript-typer**, så resten af koden kender `Product`:
 
 ```bash
-# Alle publicerede sider, kun titel og slug
-curl -g "http://localhost:3000/api/pages?select[title]=true&select[slug]=true"
+pnpm generate:types
+```
 
-# Filtrering med where
-curl -g "http://localhost:3000/api/pages?where[slug][equals]=om-os&depth=0"
+Når `pnpm dev` kører, opretter Payload selv tabellen i databasen. **Shop → Products** dukker op i admin-panelet, og API'et virker med det samme. Demo-produkterne i [`src/seed/products.ts`](src/seed/products.ts) oprettes, næste gang serveren starter.
+
+Payload har også felttyper til relationer (`relationship`), uploads, arrays, rich text, datoer, JSON og meget mere.
+
+## 4. Et API-endpoint, der henter og filtrerer
+
+**Det automatiske API.** Alle collections får et REST API med filtrering (`where`), sortering, paginering og feltudvalg. Adgangsreglerne fra collectionen gælder også her:
+
+```bash
+# Produkter under 100 kr., sorteret efter pris, kun navn og pris
+curl -g "http://localhost:3000/api/products?where[price][less_than]=100&sort=price&select[name]=true&select[price]=true"
+
+# Kaffe på lager
+curl -g "http://localhost:3000/api/products?where[category][equals]=coffee&where[inStock][equals]=true"
+```
+
+**Et custom endpoint.** Vil man have sine egne parametre, sin egen validering eller sit eget svarformat, lægger man et endpoint på collectionen. Se [`src/collections/Products/searchEndpoint.ts`](src/collections/Products/searchEndpoint.ts):
+
+```ts
+export const searchEndpoint: Endpoint = {
+  path: '/search', // bliver til GET /api/products/search
+  method: 'get',
+  handler: async (req) => {
+    const { category, maxPrice, inStock } = req.query
+    const where: Where = {}
+    if (category) where.category = { equals: category }
+    if (inStock === 'true') where.inStock = { equals: true }
+    if (maxPrice) where.price = { less_than_equal: Number(maxPrice) }
+
+    const result = await req.payload.find({
+      collection: 'products',
+      where,
+      sort: 'price',
+      req,
+      overrideAccess: false,
+    })
+
+    return Response.json({
+      count: result.totalDocs,
+      products: result.docs.map(({ id, name, category, price, inStock }) => ({
+        id,
+        name,
+        category,
+        price,
+        inStock,
+      })),
+    })
+  },
+}
+```
+
+```bash
+curl "http://localhost:3000/api/products/search?category=coffee&maxPrice=120&inStock=true"
+# {"count":2,"products":[{"id":1,"name":"Espresso, hele bønner","category":"coffee","price":89,"inStock":true}, ...]}
+```
+
+`req.payload.find()` er Payloads **Local API**: samme forespørgsler som REST, men direkte i koden og uden HTTP. Det samme kald kan bruges fra en server-komponent i Next.js, et cron-job eller et hook.
+
+**Skal data sendes videre til et andet system**, f.eks. et webhook eller en ekstern tjeneste, hver gang en række ændres, bruger man et `afterChange`-hook på collectionen:
+
+```ts
+hooks: {
+  afterChange: [async ({ doc }) => {
+    await fetch('https://example.com/webhook', { method: 'POST', body: JSON.stringify(doc) })
+  }],
+},
 ```
 
 ## Projektstruktur
@@ -79,7 +170,7 @@ src/
   payload.config.ts   Hele CMS'et: collections, database, admin, seed
   env.ts              Konfiguration med demo-standardværdier (kan overskrives via .env)
   db.ts               Database-adapteren (SQLite), med en lille rettelse til en drizzle-kit-fejl
-  collections/        Tabeller i databasen: Pages, Media, Categories, SeoEntries, Redirects, Users ...
+  collections/        Tabeller i databasen: Pages, Media, Products, SeoEntries, Redirects, Users ...
   blocks/             Side-blokke (config + React-komponent) og RenderBlocks
   access/             Adgangsregler (admin/editor-roller)
   seed/               Demo-data, der oprettes ved første start
@@ -114,7 +205,7 @@ Demoen er sat op til at køre lokalt uden konfiguration. Før den kører på en 
 
 Repoet har med vilje kun to commits:
 
-1. **Udgangspunktet:** hele CMS'et, som det ser ud nu
+1. **Udgangspunktet:** CMS'et med sider, medier og SEO
 2. **Ny tabel og API-endpoint:** præcis de ændringer, der skal til for punkt 3 og 4
 
 Kør `git show HEAD` for at se, hvor lidt kode der skal til.

@@ -70,6 +70,7 @@ export interface Config {
     pages: Page;
     media: Media;
     categories: Category;
+    products: Product;
     'seo-entries': SeoEntry;
     redirects: Redirect;
     'activity-log': ActivityLog;
@@ -88,6 +89,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
     'seo-entries': SeoEntriesSelect<false> | SeoEntriesSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
@@ -311,6 +313,23 @@ export interface Category {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  category: 'coffee' | 'tea' | 'equipment';
+  /**
+   * Price in DKK.
+   */
+  price: number;
+  inStock?: boolean | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Centralized SEO and URL management for the whole site.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -503,6 +522,10 @@ export interface PayloadLockedDocument {
         value: number | Category;
       } | null)
     | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
         relationTo: 'seo-entries';
         value: number | SeoEntry;
       } | null)
@@ -693,6 +716,19 @@ export interface CategoriesSelect<T extends boolean = true> {
   parent?: T;
   generateSlug?: T;
   slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  category?: T;
+  price?: T;
+  inStock?: T;
+  description?: T;
   updatedAt?: T;
   createdAt?: T;
 }

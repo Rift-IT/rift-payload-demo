@@ -3,13 +3,17 @@ import type { Payload } from 'payload'
 import { demoUser } from '@/env'
 import { logActivity } from '@/lib/logActivity'
 
+import { seedProducts } from './products'
 import { heading, paragraph, richText } from './richText'
 
 // Seeding runs at startup, outside a Next request, where cache revalidation
 // isn't available. The collection hooks skip it when this flag is set.
 const context = { disableRevalidate: true }
 
-async function isEmpty(payload: Payload, collection: 'users' | 'pages'): Promise<boolean> {
+async function isEmpty(
+  payload: Payload,
+  collection: 'users' | 'pages' | 'products',
+): Promise<boolean> {
   const { totalDocs } = await payload.count({ collection, overrideAccess: true })
   return totalDocs === 0
 }
@@ -125,6 +129,11 @@ export async function seed(payload: Payload): Promise<void> {
 
   if (await isEmpty(payload, 'pages')) {
     await seedPages(payload)
+    seeded = true
+  }
+
+  if (await isEmpty(payload, 'products')) {
+    await seedProducts(payload)
     seeded = true
   }
 
