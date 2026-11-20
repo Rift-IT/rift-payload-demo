@@ -1,0 +1,166 @@
+:root {
+  --rift-bg: #ffffff;
+  --rift-fg: #18181b;
+  --rift-muted: #52525b;
+  --rift-surface: #f4f4f5;
+  --rift-border: #e4e4e7;
+  --rift-accent: #18181b;
+  --rift-max: 768px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 18px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  color: var(--rift-fg);
+  background: var(--rift-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  padding-bottom: 4rem;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+}
+
+/* Header and footer */
+.rift-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--rift-border);
+}
+
+.rift-header__brand {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.rift-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.rift-header__nav a:not(.rift-button) {
+  color: var(--rift-muted);
+  text-decoration: none;
+}
+
+.rift-footer {
+  padding: 1.5rem 1.25rem;
+  border-top: 1px solid var(--rift-border);
+  color: var(--rift-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Layout rhythm between blocks */
+.rift-block + .rift-block {
+  margin-top: 3rem;
+}
+
+.rift-content,
+.rift-media {
+  max-width: var(--rift-max);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+/* Hero */
+.rift-hero {
+  position: relative;
+  padding: 6rem 1.25rem;
+  background-color: var(--rift-surface);
+  background-size: cover;
+  background-position: center;
+  text-align: center;
+}
+
+.rift-hero[data-has-image='true'] {
+  color: #fff;
+}
+
+.rift-hero[data-has-image='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.rift-hero__inner {
+  position: relative;
+  max-width: var(--rift-max);
+  margin-inline: auto;
+}
+
+.rift-hero__heading {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.rift-hero__subheading {
+  font-size: 1.15rem;
+  margin: 0 auto 1.75rem;
+  max-width: 42ch;
+}
+
+/* Buttons */
+.rift-button {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
+  background: var(--rift-accent);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.rift-button--small {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.rift-hero[data-has-image='true'] .rift-button {
+  background: #fff;
+  color: #18181b;
+}
+
+/* Media block */
+.rift-media__caption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--rift-muted);
+  text-align: center;
+}

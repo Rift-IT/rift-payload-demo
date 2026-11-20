@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# local database and uploads (created on first start)
+*.db
+*.db-shm
+*.db-wal
+public/media/
+
+# env files (the project runs without one; see .env.example)
+.env
+.env*.local
+
+# misc
+.DS_Store
+*.log
